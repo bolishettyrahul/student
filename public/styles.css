@@ -690,7 +690,7 @@ tbody tr:hover {
 /* --- Mobile UI/UX Improvements (max-width: 768px) ------------------- */
 @media (max-width: 768px) {
   .dashboard-layout {
-    grid-template-columns: 1fr;
+    display: block;
     padding-bottom: 74px; /* Space for bottom nav */
   }
 
@@ -763,6 +763,7 @@ tbody tr:hover {
     flex-direction: row;
     justify-content: flex-start;
     gap: 1rem;
+    min-width: 0;
   }
 
   .header-stats {
@@ -772,6 +773,8 @@ tbody tr:hover {
     padding-bottom: 0.2rem;
     -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
+    flex: 1;
+    min-width: 0;
   }
   .header-stats::-webkit-scrollbar { display: none; }
 
@@ -789,7 +792,7 @@ tbody tr:hover {
   }
 
   /* Enforce touch targets & prevent iOS zoom */
-  input, select, .btn {
+  input:not([type="hidden"]), select, .btn {
     font-size: 16px !important;
     min-height: 48px; 
   }
