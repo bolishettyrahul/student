@@ -469,6 +469,7 @@ select option { background: #1e2433; }
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  flex-wrap: wrap;
 }
 
 .table-filter label {
@@ -645,6 +646,7 @@ tbody tr:hover {
 
   .sidebar {
     position: fixed;
+    top: auto;
     bottom: 0;
     left: 0;
     right: 0;
@@ -678,6 +680,7 @@ tbody tr:hover {
 
   .nav-item {
     width: 25%;
+    height: auto;
     min-height: 48px;
     display: flex;
     flex-direction: column;
@@ -762,6 +765,12 @@ tbody tr:hover {
 
   table { min-width: 680px; }
   th, td { padding: 0.78rem 0.95rem; }
+
+  .toast-bar {
+    bottom: 96px; /* Above the bottom navigation */
+    width: 90%;
+    max-width: none;
+  }
 }
 
 @media (max-width: 480px) {
