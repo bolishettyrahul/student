@@ -3,6 +3,8 @@ const dotenv = require("dotenv");
 
 const Student = require("../models/Student");
 const Course = require("../models/Course");
+const Enrollment = require("../models/Enrollment");
+const Result = require("../models/Result");
 
 dotenv.config();
 
@@ -74,6 +76,28 @@ function buildStudents() {
   });
 }
 
+function buildStudentCoursePairs(studentDocs, courseDocs) {
+  const pairs = [];
+
+  studentDocs.forEach((student, index) => {
+    // Each student is assigned to 3 courses in a round-robin pattern.
+    const first = index % courseDocs.length;
+    const second = (index + 2) % courseDocs.length;
+    const third = (index + 4) % courseDocs.length;
+    const uniqueCourseIndexes = Array.from(new Set([first, second, third]));
+
+    uniqueCourseIndexes.forEach((courseIndex, position) => {
+      pairs.push({
+        student_id: student._id,
+        course_id: courseDocs[courseIndex]._id,
+        marks: 55 + ((index * 11 + position * 7) % 41)
+      });
+    });
+  });
+
+  return pairs;
+}
+
 async function seedData() {
   if (!mongoUri) {
     throw new Error("Missing MONGODB_URI in environment variables.");
@@ -102,14 +126,57 @@ async function seedData() {
   const studentResult = await Student.bulkWrite(studentOps);
   const courseResult = await Course.bulkWrite(courseOps);
 
+  const seededStudents = await Student.find({
+    email: { $in: students.map((student) => student.email) }
+  }).select("_id email");
+  const seededCourses = await Course.find({
+    course_name: { $in: courses.map((course) => course.course_name) }
+  }).select("_id course_name");
+
+  const studentCoursePairs = buildStudentCoursePairs(seededStudents, seededCourses);
+
+  const enrollmentOps = studentCoursePairs.map((pair) => ({
+    updateOne: {
+      filter: { student_id: pair.student_id, course_id: pair.course_id },
+      update: {
+        $setOnInsert: {
+          student_id: pair.student_id,
+          course_id: pair.course_id
+        }
+      },
+      upsert: true
+    }
+  }));
+
+  const resultOps = studentCoursePairs.map((pair) => ({
+    updateOne: {
+      filter: { student_id: pair.student_id, course_id: pair.course_id },
+      update: {
+        $set: {
+          marks: pair.marks
+        }
+      },
+      upsert: true
+    }
+  }));
+
+  const enrollmentResult = await Enrollment.bulkWrite(enrollmentOps);
+  const marksResult = await Result.bulkWrite(resultOps);
+
   const totalStudents = await Student.countDocuments();
   const totalCourses = await Course.countDocuments();
+  const totalEnrollments = await Enrollment.countDocuments();
+  const totalResults = await Result.countDocuments();
 
   console.log("Seed complete.");
   console.log(`Students upserted: ${studentResult.upsertedCount}, modified: ${studentResult.modifiedCount}`);
   console.log(`Courses upserted: ${courseResult.upsertedCount}, modified: ${courseResult.modifiedCount}`);
+  console.log(`Enrollments upserted: ${enrollmentResult.upsertedCount}, modified: ${enrollmentResult.modifiedCount}`);
+  console.log(`Results upserted: ${marksResult.upsertedCount}, modified: ${marksResult.modifiedCount}`);
   console.log(`Total students in DB: ${totalStudents}`);
   console.log(`Total courses in DB: ${totalCourses}`);
+  console.log(`Total enrollments in DB: ${totalEnrollments}`);
+  console.log(`Total results in DB: ${totalResults}`);
 }
 
 seedData()
